@@ -1,0 +1,38 @@
+root@rhel:~/333# cat y.sh 
+#!/bin/bash
+
+# Repositories to push to
+REPOS=("https://github.com/MasbaIUBAT/xyz2.git" "https://github.com/MasbaIUBAT/xyz1.git" )
+# File to be pushed
+FILE_NAME="amai_ato"
+COMMIT_MESSAGE="Pushing 'amai_ato' file"
+
+# Loop through each repository
+for REPO_URL in "${REPOS[@]}"; do
+    # Check if directory for repo already exists
+    REPO_DIR=$(basename "$REPO_URL" .git)
+    if [ ! -d "$REPO_DIR" ]; then
+        echo "Cloning repository from $REPO_URL..."
+        git clone "$REPO_URL" || { echo "Failed to clone repository $REPO_URL"; continue; }
+    fi
+
+    # Navigate into the repository directory
+    cd "$REPO_DIR" || { echo "Failed to navigate to $REPO_DIR"; continue; }
+
+    # Check if the file exists in the directory
+    if [ -f "../$FILE_NAME" ]; then
+        echo "Adding and committing '$FILE_NAME' file to $REPO_DIR..."
+        cp "../$FILE_NAME" . || { echo "Failed to copy $FILE_NAME to $REPO_DIR"; continue; }
+        git add "$FILE_NAME"
+        git commit -m "$COMMIT_MESSAGE" || { echo "Failed to commit changes in $REPO_DIR"; continue; }
+        echo "Pushing changes to $REPO_URL..."
+        git push origin main || { echo "Failed to push changes to $REPO_URL"; continue; }
+    else
+        echo "File '$FILE_NAME' does not exist in the parent directory. Skipping..."
+    fi
+
+    # Navigate back to parent directory
+    cd ..
+done
+
+echo "Script execution completed."
